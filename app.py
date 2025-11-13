@@ -23,12 +23,6 @@ CLASS_NAMES = ['biodegradable', 'hazardous', 'non_biodegradable', 'recyclable']
 MODEL_DIR = os.path.join(os.getcwd(), 'models_cache') # Cache models here
 os.makedirs(MODEL_DIR, exist_ok=True) 
 
-# --- Model URLs ---
-# Your direct download links
-YOLO_MODEL_URL = "https://drive.google.com/uc?id=1ape52G9_LQqsTMSCNhUXXwX_yfC-EpJR"
-MOBILENET_MODEL_URL = "https://drive.google.com/file/d/1kTvKJ-HufN4IH3KKXfxsYc03BM-hygG1/view?usp=drive_link"
-CNN_MODEL_URL = "https://drive.google.com/file/d/1kTvKJ-HufN4IH3KKXfxsYc03BM-hygG1/view?usp=drive_link"
-
 # --- (NEW) Robust Google Drive Download Function ---
 @st.cache_data(show_spinner=False) # Cache the download
 def download_model(file_id, local_path):
@@ -66,7 +60,8 @@ def download_model(file_id, local_path):
 @st.cache_resource
 def load_yolo_model():
     local_path = os.path.join(MODEL_DIR, 'best.pt')
-    file_id = "1ape52G9_LQqsTMSCNhUXXwX_yfC-EpJR" # Extracted from your URL
+    # This is your YOLO model's File ID
+    file_id = "1ape52G9_LQqsTMSCNhUXXwX_yfC-EpJR" 
     if download_model(file_id, local_path):
         try:
             return YOLO(local_path)
@@ -77,7 +72,8 @@ def load_yolo_model():
 @st.cache_resource
 def load_mobilenet_model():
     local_path = os.path.join(MODEL_DIR, 'mobilenetv3_finetuned.keras')
-    file_id = "10GkSbxvvzr5pGQNz9xG7DOVQT5NYhqcb" # Extracted from your URL
+    # This is your NEW MobileNet File ID
+    file_id = "1kTvKJ-HufN4IH3KKXfxsYc03BM-hygG1" 
     if download_model(file_id, local_path):
         try:
             return tf.keras.models.load_model(local_path)
@@ -88,7 +84,9 @@ def load_mobilenet_model():
 @st.cache_resource
 def load_cnn_model():
     local_path = os.path.join(MODEL_DIR, 'simple_cnn.h5')
-    file_id = "1RTLAYRslj_Bvw4BeyfVNeyEmwMgZ6Zvy" # Extracted from your URL
+    # This is your NEW CNN File ID
+    # !!! WARNING: This is the SAME ID as MobileNet !!!
+    file_id = "1kTvKJ-HufN4IH3KKXfxsYc03BM-hygG1" 
     if download_model(file_id, local_path):
         try:
             return tf.keras.models.load_model(local_path)
@@ -106,7 +104,7 @@ def preprocess_image_for_keras(img_pil):
     img = img_rgb.resize((224, 224))
     img_array = tf.keras.preprocessing.image.img_to_array(img)
     img_array = np.expand_dims(img_array, axis=0)
-    # img_array = img_array / 255.0 # Let's keep this commented out as per our last check
+    # img_array = img_array / 255.0 # Keep this commented out
     return img_array
 
 # --- Non-Waste Detection Logic ---
