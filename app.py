@@ -6,6 +6,7 @@ import numpy as np
 import os
 import time
 import requests # For downloading
+import warnings
 
 # --- Configuration ---
 st.set_page_config(
@@ -13,32 +14,51 @@ st.set_page_config(
     page_icon="♻️",
     layout="centered"
 )
+# Suppress TensorFlow warnings
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+warnings.filterwarnings('ignore', category=UserWarning, module='tensorflow')
 
 # --- Class Names ---
 CLASS_NAMES = ['biodegradable', 'hazardous', 'non_biodegradable', 'recyclable']
 MODEL_DIR = os.path.join(os.getcwd(), 'models_cache') # Cache models here
 os.makedirs(MODEL_DIR, exist_ok=True) 
 
-# --- (NEW) Model URLs ---
-# Your direct download links have been added!
+# --- Model URLs ---
+# Your direct download links
 YOLO_MODEL_URL = "https://drive.google.com/uc?id=1ape52G9_LQqsTMSCNhUXXwX_yfC-EpJR"
 MOBILENET_MODEL_URL = "https://drive.google.com/uc?id=10GkSbxvvzr5pGQNz9xG7DOVQT5NYhqcb"
 CNN_MODEL_URL = "https://drive.google.com/uc?id=1RTLAYRslj_Bvw4BeyfVNeyEmwMgZ6Zvy"
-# --------------------------------------------------------
 
-# --- (NEW) Helper function to download models ---
-@st.cache_data(show_spinner=False) # Use cache_data for file-like objects
-def download_model(url, local_path):
+# --- (NEW) Robust Google Drive Download Function ---
+@st.cache_data(show_spinner=False) # Cache the download
+def download_model(file_id, local_path):
     if not os.path.exists(local_path):
-        with st.spinner(f"Downloading model: {os.path.basename(local_path)}... (This happens once)"):
+        with st.spinner(f"Downloading {os.path.basename(local_path)}... (This happens once)"):
+            URL = "https://docs.google.com/uc?export=download"
+            session = requests.Session()
+            
             try:
-                with requests.get(url, stream=True) as r:
-                    r.raise_for_status()
-                    with open(local_path, 'wb') as f:
-                        for chunk in r.iter_content(chunk_size=8192):
+                # First, send a request to get the download confirmation cookie
+                response = session.get(URL, params={"id": file_id}, stream=True)
+                token = None
+                for key, value in response.cookies.items():
+                    if key.startswith("download_warning"):
+                        token = value
+                        break
+                
+                # If a token was found (meaning Google showed a warning),
+                # send a second request with the confirmation token
+                if token:
+                    params = {"id": file_id, "confirm": token}
+                    response = session.get(URL, params=params, stream=True)
+                
+                # Now, save the file content
+                with open(local_path, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=32768):
+                        if chunk:
                             f.write(chunk)
             except Exception as e:
-                st.error(f"Error downloading model {local_path}: {e}")
+                st.error(f"Error downloading model {os.path.basename(local_path)}: {e}")
                 return None
     return local_path
 
@@ -46,31 +66,34 @@ def download_model(url, local_path):
 @st.cache_resource
 def load_yolo_model():
     local_path = os.path.join(MODEL_DIR, 'best.pt')
-    if download_model(YOLO_MODEL_URL, local_path):
+    file_id = "1ape52G9_LQqsTMSCNhUXXwX_yfC-EpJR" # Extracted from your URL
+    if download_model(file_id, local_path):
         try:
             return YOLO(local_path)
         except Exception as e:
-            st.error(f"Error loading YOLO model: {e}")
+            st.error(f"Error loading YOLO model ({local_path}): {e}")
     return None
 
 @st.cache_resource
 def load_mobilenet_model():
     local_path = os.path.join(MODEL_DIR, 'mobilenetv3_finetuned.keras')
-    if download_model(MOBILENET_MODEL_URL, local_path):
+    file_id = "10GkSbxvvzr5pGQNz9xG7DOVQT5NYhqcb" # Extracted from your URL
+    if download_model(file_id, local_path):
         try:
             return tf.keras.models.load_model(local_path)
         except Exception as e:
-            st.error(f"Error loading MobileNetV3 model: {e}")
+            st.error(f"Error loading MobileNetV3 model ({local_path}): {e}")
     return None
 
 @st.cache_resource
 def load_cnn_model():
     local_path = os.path.join(MODEL_DIR, 'simple_cnn.h5')
-    if download_model(CNN_MODEL_URL, local_path):
+    file_id = "1RTLAYRslj_Bvw4BeyfVNeyEmwMgZ6Zvy" # Extracted from your URL
+    if download_model(file_id, local_path):
         try:
             return tf.keras.models.load_model(local_path)
         except Exception as e:
-            st.error(f"Error loading Simple CNN model: {e}")
+            st.error(f"Error loading Simple CNN model ({local_path}): {e}")
     return None
 
 @st.cache_resource
@@ -83,7 +106,7 @@ def preprocess_image_for_keras(img_pil):
     img = img_rgb.resize((224, 224))
     img_array = tf.keras.preprocessing.image.img_to_array(img)
     img_array = np.expand_dims(img_array, axis=0)
-    img_array = img_array / 255.0
+    # img_array = img_array / 255.0 # Let's keep this commented out as per our last check
     return img_array
 
 # --- Non-Waste Detection Logic ---
