@@ -1,0 +1,6 @@
+streamlit
+tensorflow-cpu
+ultralytics
+numpy
+Pillow
+requests
