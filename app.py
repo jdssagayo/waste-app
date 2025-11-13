@@ -26,8 +26,8 @@ os.makedirs(MODEL_DIR, exist_ok=True)
 # --- Model URLs ---
 # Your direct download links
 YOLO_MODEL_URL = "https://drive.google.com/uc?id=1ape52G9_LQqsTMSCNhUXXwX_yfC-EpJR"
-MOBILENET_MODEL_URL = "https://drive.google.com/file/d/10GkSbxvvzr5pGQNz9xG7DOVQT5NYhqcb/view?usp=drive_link"
-CNN_MODEL_URL = "https://drive.google.com/file/d/1RTLAYRslj_Bvw4BeyfVNeyEmwMgZ6Zvy/view?usp=drive_link"
+MOBILENET_MODEL_URL = "https://drive.google.com/file/d/1kTvKJ-HufN4IH3KKXfxsYc03BM-hygG1/view?usp=drive_link"
+CNN_MODEL_URL = "https://drive.google.com/file/d/1kTvKJ-HufN4IH3KKXfxsYc03BM-hygG1/view?usp=drive_link"
 
 # --- (NEW) Robust Google Drive Download Function ---
 @st.cache_data(show_spinner=False) # Cache the download
